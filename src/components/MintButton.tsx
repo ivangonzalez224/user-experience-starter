@@ -1,12 +1,12 @@
 "use client";
 
 type Props = { contractAddress: string };
-import { getContract, prepareContractCall } from "thirdweb";
+import { getContract, prepareContractCall, readContract } from "thirdweb";
 
 import { optimism } from "thirdweb/chains";
 import { client } from "@/lib/thirdwebClient";
-import { useCallback, useMemo } from "react";
-import { useSendTransaction } from "thirdweb/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useActiveAccount, useSendTransaction } from "thirdweb/react";
 import { parseUnits } from "ethers";
 
 export default function MintButton(props: Props) {
@@ -27,10 +27,25 @@ export default function MintButton(props: Props) {
         // the chain the contract is deployed on
         chain: optimism,
         // the contract's address
-        address: "0x5Be2eEe4D534298C6F089479c904D6edA18F28F0",
+        address: "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
       }),
     []
   );
+  const address = useActiveAccount();
+  const [balance,setBalance] = useState<bigint>(0n);
+  useEffect(() => {
+    async function run() {
+      if(address?.address) {
+        const balance = await readContract({
+          contract: contract,
+          method: "function balanceOf(address) view returns (uint256)",
+          params: [address?.address],
+        });
+        setBalance(balance);
+      }  
+    }
+    run();
+  }, [address?.address, contract]);
 
   const onClick = useCallback(async () => {
     const transaction = prepareContractCall({
@@ -61,7 +76,7 @@ export default function MintButton(props: Props) {
         mint 10.5 tokens
       </button>
 
-      <p>data</p>
+      <p>{balance.toString()}</p>
     </div>
   );
 }
